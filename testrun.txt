@@ -1,0 +1,134 @@
+.FFF.FFF....FF.F.                                                        [100%]
+================================== FAILURES ===================================
+______________________________ test_add_to_cart _______________________________
+
+client = <FlaskClient <Flask 'app'>>
+resolve_first = <function resolve_first.<locals>._resolve at 0x0000026C4A74E660>
+
+    def test_add_to_cart(client, resolve_first):
+        path = resolve_first(["/cart/add", "/add_to_cart", "/cart/add_item"], "POST")
+>       assert path, "No matching add-to-cart route found."
+E       AssertionError: No matching add-to-cart route found.
+E       assert None
+
+tests\integration\test_cart_routes.py:5: AssertionError
+____________________________ test_update_cart_qty _____________________________
+
+client = <FlaskClient <Flask 'app'>>
+resolve_first = <function resolve_first.<locals>._resolve at 0x0000026C4A74F100>
+
+    def test_update_cart_qty(client, resolve_first):
+        add_path = resolve_first(["/cart/add", "/add_to_cart"], "POST")
+        upd_path = resolve_first(["/cart/update", "/update_cart"], "POST")
+>       assert add_path and upd_path
+E       assert (None)
+
+tests\integration\test_cart_routes.py:12: AssertionError
+____________________________ test_remove_from_cart ____________________________
+
+client = <FlaskClient <Flask 'app'>>
+resolve_first = <function resolve_first.<locals>._resolve at 0x0000026C4A74F1A0>
+
+    def test_remove_from_cart(client, resolve_first):
+        add_path = resolve_first(["/cart/add", "/add_to_cart"], "POST")
+        rem_path = resolve_first(["/cart/remove", "/remove_from_cart"], "POST")
+>       assert add_path and rem_path
+E       assert (None)
+
+tests\integration\test_cart_routes.py:20: AssertionError
+____________________________ test_book_detail_page ____________________________
+
+client = <FlaskClient <Flask 'app'>>
+
+    def test_book_detail_page(client):
+        # Try the two common patterns; accept 200/302
+        for candidate in ("/book/1", "/books/1"):
+            r = client.get(candidate)
+            if r.status_code in (200, 302):
+                return
+>       assert False, "Could not reach a book details page at /book/1 or /books/1"
+E       AssertionError: Could not reach a book details page at /book/1 or /books/1
+E       assert False
+
+tests\integration\test_catalog_routes.py:14: AssertionError
+____________________________ test_checkout_success ____________________________
+
+client = <FlaskClient <Flask 'app'>>
+resolve_first = <function resolve_first.<locals>._resolve at 0x0000026C4A74F7E0>
+
+    def test_checkout_success(client, resolve_first):
+        add = _add_path(resolve_first)
+        chk = _checkout_path(resolve_first)
+>       assert add and chk
+E       assert (None)
+
+tests\integration\test_checkout_flow.py:12: AssertionError
+______________________ test_checkout_fail_card_ends_1111 ______________________
+
+client = <FlaskClient <Flask 'app'>>
+resolve_first = <function resolve_first.<locals>._resolve at 0x0000026C4A74DEE0>
+
+    def test_checkout_fail_card_ends_1111(client, resolve_first):
+        add = _add_path(resolve_first)
+        chk = _checkout_path(resolve_first)
+>       assert add and chk
+E       assert (None)
+
+tests\integration\test_checkout_flow.py:23: AssertionError
+_________________________ test_fixed_amount_discount __________________________
+
+mock_item = {'price': 100.0, 'quantity': 1}
+
+    def test_fixed_amount_discount(mock_item):
+        """Tests a fixed dollar amount discount (e.g., $10 off)."""
+        # Arrange: $100.00 - $10.00 fixed discount
+        discount_amount = 10.00
+        expected_price = 90.00
+    
+        # Act
+        # We pass the fixed discount amount to the function
+>       actual_price = calculate_discounted_price(mock_item['price'], fixed_discount=discount_amount)
+E       TypeError: calculate_discounted_price() got an unexpected keyword argument 'fixed_discount'
+
+tests\unit\test_discounts.py:17: TypeError
+__________________________ test_percentage_discount ___________________________
+
+mock_item = {'price': 100.0, 'quantity': 1}
+
+    def test_percentage_discount(mock_item):
+        """Tests a percentage discount (e.g., 20% off)."""
+        # Arrange: $100.00 * 0.80 = $80.00
+        discount_percent = 0.20
+        expected_price = 80.00
+    
+        # Act
+        # We pass the percentage discount rate to the function
+>       actual_price = calculate_discounted_price(mock_item['price'], percentage_discount=discount_percent)
+E       TypeError: calculate_discounted_price() got an unexpected keyword argument 'percentage_discount'
+
+tests\unit\test_discounts.py:30: TypeError
+_________________________ test_discount_with_rounding _________________________
+
+    def test_discount_with_rounding():
+        """Tests correct rounding behavior for discounts."""
+        # Arrange: Price $19.99, 10% discount ($1.999 off) -> $17.991, should round down to $17.99
+        price = 19.99
+        discount_percent = 0.10
+        expected_price = 17.99
+    
+        # Act
+>       actual_price = calculate_discounted_price(price, percentage_discount=discount_percent)
+E       TypeError: calculate_discounted_price() got an unexpected keyword argument 'percentage_discount'
+
+tests\unit\test_discounts.py:52: TypeError
+=========================== short test summary info ===========================
+FAILED tests/integration/test_cart_routes.py::test_add_to_cart - AssertionErr...
+FAILED tests/integration/test_cart_routes.py::test_update_cart_qty - assert (...
+FAILED tests/integration/test_cart_routes.py::test_remove_from_cart - assert ...
+FAILED tests/integration/test_catalog_routes.py::test_book_detail_page - Asse...
+FAILED tests/integration/test_checkout_flow.py::test_checkout_success - asser...
+FAILED tests/integration/test_checkout_flow.py::test_checkout_fail_card_ends_1111
+FAILED tests/unit/test_discounts.py::test_fixed_amount_discount - TypeError: ...
+FAILED tests/unit/test_discounts.py::test_percentage_discount - TypeError: ca...
+FAILED tests/unit/test_discounts.py::test_discount_with_rounding - TypeError:...
+9 failed, 8 passed in 1.01s
