@@ -330,3 +330,19 @@ def compute_cart_totals(cart: Iterable, codes: Iterable[str] = None) -> Dict[str
         "total": discounted,
         "line_items": line_items,
     }
+# --- Compatibility wrapper for unit tests expecting this name ---
+def calculate_discounted_price(amount, codes=None):
+    """
+    Returns the final price after applying one or more discount codes.
+    Accepts either a single code string or an iterable of codes.
+    Examples:
+        calculate_discounted_price(100.0, "SAVE10")           -> 90.0
+        calculate_discounted_price(200.0, ["SAVE10","WELCOME20"]) -> 144.0
+    """
+    if codes is None:
+        codes = []
+    # Allow a single string like "SAVE10" as well as a list/tuple
+    if isinstance(codes, str):
+        codes = [codes]
+    # Reuse the existing discount logic
+    return apply_discounts(float(amount), codes)

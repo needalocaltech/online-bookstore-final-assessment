@@ -8,10 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 def _load_flask_app():
-    """
-    Try common module/attribute names, e.g., app.py exposing 'app'.
-    Edit candidates if your file/variable is different.
-    """
+    """Try common module/attribute names, e.g., app.py exposing 'app'."""
     candidates = [
         ("app", "app"),    # app.py -> app (Flask instance)
         ("main", "app"),   # main.py -> app
@@ -44,12 +41,16 @@ def route_map(app):
     """Return {path: methods} for resolving real endpoints."""
     return {str(r): r.methods for r in app.url_map.iter_rules()}
 
-def resolve_first(route_map, candidates, need_method=None):
+@pytest.fixture
+def resolve_first(route_map):
     """
-    Pick the first candidate path that exists (and allows need_method if specified).
+    Fixture that returns a resolver callable.
+    Usage in tests:  path = resolve_first(["/cart/add", "/add_to_cart"], "POST")
     """
-    for c in candidates:
-        for rule, methods in route_map.items():
-            if rule == c and (need_method is None or need_method in methods):
-                return c
-    return None
+    def _resolve(candidates, need_method=None):
+        for c in candidates:
+            for rule, methods in route_map.items():
+                if rule == c and (need_method is None or need_method in methods):
+                    return c
+        return None
+    return _resolve
