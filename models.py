@@ -1,3 +1,72 @@
+# ========= Test-friendly pricing helpers (thin wrappers) =========
+from typing import Iterable, Dict, Any, List, Tuple
+
+DISCOUNT_TABLE = {
+    "SAVE10": 0.10,
+    "WELCOME20": 0.20,
+}
+
+def _money(x: float) -> float:
+    return round(x + 1e-9, 2)
+
+def apply_discount(amount: float, code: str) -> float:
+    pct = DISCOUNT_TABLE.get(str(code).strip().upper())
+    if pct:
+        return _money(amount * (1.0 - pct))
+    return _money(amount)
+
+def apply_discounts(amount: float, codes: Iterable[str]) -> float:
+    total = float(amount)
+    for c in (codes or []):
+        total = apply_discount(total, c)
+    return _money(total)
+
+def _normalize_cart(cart: Iterable) -> List[Tuple[float, int]]:
+    """
+    Accepts:
+      - list of dicts: {"price": 10.0, "qty": 2}
+      - list of tuples: (book_id, qty, price) or (price, qty)
+    Returns: list of (price, qty)
+    """
+    norm: List[Tuple[float, int]] = []
+    for item in cart or []:
+        if isinstance(item, dict):
+            price = float(item.get("price", 0.0))
+            qty = int(item.get("qty", 0))
+            norm.append((price, qty))
+        elif isinstance(item, (list, tuple)):
+            if len(item) == 3:
+                _, qty, price = item
+            elif len(item) == 2:
+                price, qty = item
+            else:
+                raise ValueError(f"Unsupported cart item shape: {item}")
+            norm.append((float(price), int(qty)))
+        else:
+            raise ValueError(f"Unsupported cart item type: {type(item)}")
+    return norm
+
+def calculate_total(cart: Iterable) -> float:
+    subtotal = 0.0
+    for price, qty in _normalize_cart(cart):
+        subtotal += price * qty
+    return _money(subtotal)
+
+def compute_cart_totals(cart: Iterable, codes: Iterable[str] = None) -> Dict[str, Any]:
+    line_items = []
+    subtotal = 0.0
+    for price, qty in _normalize_cart(cart):
+        line_total = price * qty
+        line_items.append({"price": _money(price), "qty": qty, "line_total": _money(line_total)})
+        subtotal += line_total
+    subtotal = _money(subtotal)
+    discounted = apply_discounts(subtotal, codes or [])
+    discount_amt = _money(subtotal - discounted)
+    return {"subtotal": subtotal, "discount": discount_amt, "total": discounted, "line_items": line_items}
+
+
+
+
 class Book:
     def __init__(self, title, category, price, image):
         self.title = title
@@ -168,3 +237,96 @@ class EmailService:
         print(f"==================\n")
         
         return True
+
+# ========= Test-friendly pricing helpers (thin wrappers) =========
+from typing import Iterable, Dict, Any, List, Tuple
+
+# Central discount table (edit to match your app)
+DISCOUNT_TABLE = {
+    "SAVE10": 0.10,
+    "WELCOME20": 0.20,
+}
+
+def _money(x: float) -> float:
+    """Round with a small epsilon to avoid floating glitches."""
+    return round(x + 1e-9, 2)
+
+def apply_discount(amount: float, code: str) -> float:
+    """
+    Apply a single discount code to a numeric amount.
+    Unknown codes return the original amount.
+    """
+    pct = DISCOUNT_TABLE.get(str(code).strip().upper())
+    if pct:
+        return _money(float(amount) * (1.0 - pct))
+    return _money(float(amount))
+
+def apply_discounts(amount: float, codes: Iterable[str]) -> float:
+    """
+    Apply multiple discount codes sequentially (multiplicative).
+    e.g., 100 with SAVE10 then WELCOME20 => 100*0.9*0.8.
+    """
+    total = float(amount)
+    for c in (codes or []):
+        total = apply_discount(total, c)
+    return _money(total)
+
+def _normalize_cart(cart: Iterable) -> List[Tuple[float, int]]:
+    """
+    Accepts:
+      - list of dicts: {"price": 10.0, "qty": 2}
+      - list/tuple: (book_id, qty, price) OR (price, qty)
+    Returns list of (price, qty).
+    """
+    norm: List[Tuple[float, int]] = []
+    for item in cart or []:
+        if isinstance(item, dict):
+            price = float(item.get("price", 0.0))
+            qty = int(item.get("qty", 0))
+            norm.append((price, qty))
+        elif isinstance(item, (list, tuple)):
+            if len(item) == 3:
+                _, qty, price = item
+            elif len(item) == 2:
+                price, qty = item
+            else:
+                raise ValueError(f"Unsupported cart item shape: {item}")
+            norm.append((float(price), int(qty)))
+        else:
+            raise ValueError(f"Unsupported cart item type: {type(item)}")
+    return norm
+
+def calculate_total(cart: Iterable) -> float:
+    """Sum price*qty for the cart (no discounts)."""
+    subtotal = 0.0
+    for price, qty in _normalize_cart(cart):
+        subtotal += price * qty
+    return _money(subtotal)
+
+def compute_cart_totals(cart: Iterable, codes: Iterable[str] = None) -> Dict[str, Any]:
+    """
+    Return a view-model of the cart totals.
+    {
+      "subtotal": 35.00,
+      "discount": 3.50,
+      "total": 31.50,
+      "line_items": [{"price":10.0,"qty":2,"line_total":20.0}, ...]
+    }
+    """
+    line_items = []
+    subtotal = 0.0
+    for price, qty in _normalize_cart(cart):
+        line_total = price * qty
+        line_items.append({"price": _money(price), "qty": qty, "line_total": _money(line_total)})
+        subtotal += line_total
+
+    subtotal = _money(subtotal)
+    discounted = apply_discounts(subtotal, codes or [])
+    discount_amt = _money(subtotal - discounted)
+
+    return {
+        "subtotal": subtotal,
+        "discount": discount_amt,
+        "total": discounted,
+        "line_items": line_items,
+    }
