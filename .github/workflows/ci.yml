@@ -9,16 +9,13 @@ on:
 
 jobs:
   test_and_lint:
-    # Specifies the runner environment for the job
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout Code
-      # Uses the official action to check out your repository code
       uses: actions/checkout@v4
 
     - name: Set up Python 3.11
-      # Sets up the desired Python version (using 3.11 based on your log)
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
@@ -29,25 +26,24 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
-        # Install testing tools: pytest for running tests, pytest-cov for coverage reports
+        # Install testing tools
         pip install pytest pytest-cov coverage
 
     - name: Run Tests and Generate Coverage Report
-      # CRITICAL FIX: Explicitly specify where to find the code (app.py, models.py)
-      # and where to find the tests (tests/) to guarantee discovery.
+      # CRITICAL FIX: Change directory (cd) into the tests folder and 
+      # run pytest using the python interpreter flag (-m pytest).
+      # The '--cov=..' tells coverage to look up one level (at the root) 
+      # for the modules (app.py and models.py).
       run: |
-        pytest -q --cov=app.py --cov=models.py --cov-report=xml --cov-report=term tests/
-      # NOTE: If your main application code is NOT in app.py or models.py, 
-      # you must change the --cov arguments above to match your files.
+        cd tests
+        python -m pytest -q --cov=.. --cov-report=xml --cov-report=term
 
     - name: Upload Coverage Report (Codecov)
-      # This step is optional but highly recommended to visualize coverage over time
       uses: codecov/codecov-action@v3
       with:
         files: ./coverage.xml
         fail_ci_if_error: true
 
     - name: Notify on Failure
-      # Runs only if a previous step in the job failed
       if: failure()
       run: echo "Tests failed! Check the run logs for details."
