@@ -47,7 +47,9 @@ jobs:
           PYTEST_ADDOPTS: "-q --maxfail=1 --disable-warnings"
         run: |
           echo "Running pytest against: $PYTEST_TARGET"
-          python -m pytest $PYTEST_TARGET --cov=. --cov-report=term --cov-report=xml
+          # python -m pytest $PYTEST_TARGET --cov=. --cov-report=term --cov-report=xml
+          python -m pytest tests --cov=. --cov-report=term --cov-report=xml
+
           mkdir -p evidence/logs
           python -m pytest $PYTEST_TARGET -q --durations=10 > evidence/logs/slow_tests.txt || true
 
