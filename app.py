@@ -165,7 +165,7 @@ def clear_cart():
     return redirect(url_for('view_cart'))
 
 
-@app.route('/checkout')
+@app.route('/checkout',methods=['POST'])
 def checkout():
     if cart.is_empty():
         flash('Your cart is empty!', 'error')
