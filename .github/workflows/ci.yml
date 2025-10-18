@@ -36,7 +36,9 @@ jobs:
     - name: Run Tests and Generate Coverage Report
       # Run pytest from the root, relying on the installation above to fix paths.
       run: |
-        pytest -q --cov=app --cov=models --cov-report=xml --cov-report=term tests/
+        # pytest -q --cov=app --cov=models --cov-report=xml --cov-report=term tests/
+         pytest -q --cov=. --cov-report=xml --cov-report=term 
+       
 
     - name: Upload Coverage Report (Codecov)
       uses: codecov/codecov-action@v3
