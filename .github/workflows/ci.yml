@@ -43,6 +43,7 @@ jobs:
     - name: Upload Coverage Report (Codecov)
       uses: codecov/codecov-action@v3
       with:
+        token: e9bc1cde-057f-48fb-99c3-f817fc9cc452
         files: ./coverage.xml
         fail_ci_if_error: true
 
