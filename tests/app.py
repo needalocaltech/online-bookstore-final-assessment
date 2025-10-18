@@ -1,49 +1,9 @@
-# app.py  (place at the repo root, same level as tests/, models.py, etc.)
-from __future__ import annotations
-
-# Try your application factory first (if you have one), otherwise make a minimal app.
-try:
-    # >>> Adjust this import to your real factory location if you have one
-    from app import create_app  # e.g., from myapp import create_app
-except Exception:
-    create_app = None  # no factory available or it failed to import
-
-if create_app is not None:
-    app = create_app()  # must be named exactly `app`
-else:
-    # Minimal fallback app so tests can import `app` without crashing
-    from flask import Flask, jsonify
-
-    app = Flask(__name__)
-    app.config.from_mapping(SECRET_KEY="test-secret", TESTING=True)
-
-    @app.get("/health")
-    def health():
-        return jsonify(status="ok")
-
-###########
-###########
-
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from models import Book, Cart, User, Order, PaymentGateway, EmailService
 import uuid
 
-########
-
-# # app.py
-# from flask import Flask, jsonify
-
-# # <-- This must exist at module import time
-# app = Flask(__name__)
-# app.config.from_mapping(SECRET_KEY="test-secret")
-
-# @app.get("/health")
-# def health():
-#     return jsonify(status="ok")
-# ########
-
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Required for sessiontyement
+app.secret_key = 'your_secret_key'  # Required for session management
 
 # Global storage for users and orders (in production, use a database)
 users = {}  # email -> User object
