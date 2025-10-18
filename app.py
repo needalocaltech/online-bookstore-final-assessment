@@ -2,8 +2,24 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from models import Book, Cart, User, Order, PaymentGateway, EmailService
 import uuid
 
+########
+
+# app.py
+from flask import Flask, jsonify
+
+# <-- This must exist at module import time
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Required for session management
+app.config.from_mapping(SECRET_KEY="test-secret")
+
+@app.get("/health")
+def health():
+    return jsonify(status="ok")
+
+
+########
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Required for sessiontyement
 
 # Global storage for users and orders (in production, use a database)
 users = {}  # email -> User object
