@@ -46,4 +46,4 @@ jobs:
 
     - name: Notify on Failure
       if: failure()
-      run: echo "Tests failed! Check the run logs for details."
+      run: echo "Tests failed! Check the run logs for  details."
