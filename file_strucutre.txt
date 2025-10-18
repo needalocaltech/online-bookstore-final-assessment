@@ -347,6 +347,18 @@ D:.
 |   \---images
 |       \---books
 +---templates
++---test
+|   +---.pytest_cache
+|   |   \---v
+|   |       \---cache
+|   +---evidence
+|   |   \---perf
+|   +---integration
+|   |   \---__pycache__
+|   +---performance
+|   |   \---__pycache__
+|   \---unit
+|       \---__pycache__
 +---tests
 |   +---.pytest_cache
 |   |   \---v
@@ -359,4 +371,5 @@ D:.
 |   |   \---__pycache__
 |   \---unit
 |       \---__pycache__
++---tools
 \---__pycache__
