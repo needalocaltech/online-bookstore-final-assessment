@@ -31,7 +31,7 @@ jobs:
         
         # 2. Install dependencies (including testing tools)
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip install pytest pytest-cov coverage setuptools
+        pip install pytest pytest-cov coverage setuptools bcrypt
 
     - name: Run Tests and Generate Coverage Report
       # Run pytest from the root, relying on the installation above to fix paths.

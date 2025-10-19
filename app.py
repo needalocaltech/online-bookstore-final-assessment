@@ -29,6 +29,7 @@ from models import Book, Cart, User, Order, PaymentGateway, EmailService
 import uuid
 import os
 import secrets
+import bcrypt
 
 ########
 
@@ -43,6 +44,20 @@ import secrets
 # def health():
 #     return jsonify(status="ok")
 # ########
+# import brcypt
+import bcrypt
+
+# Password to hash
+# password = b"my_secure_password"
+password = b"demo123"
+# Generate a salt
+salt = bcrypt.gensalt()
+
+# Hash the password
+hashed_password = bcrypt.hashpw(password, salt)
+
+print("Hashed Password:", hashed_password)
+
 
 app = Flask(__name__)
 # app.secret_key = 'your_secret_key'  # Required for sessiontyement
@@ -54,7 +69,7 @@ users = {}  # email -> User object
 orders = {}  # order_id -> Order object
 
 # Create demo user for testing
-demo_user = User("demo@bookstore.com", "demo123", "Demo User", "123 Demo Street, Demo City, DC 12345")
+demo_user = User("demo@bookstore.com", hashed_password, "Demo User", "123 Demo Street, Demo City, DC 12345")
 users["demo@bookstore.com"] = demo_user
 
 # Create a cart instance to manage the cart
