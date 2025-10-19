@@ -1,6 +1,6 @@
 import pytest
 # from models_0 import calculate_discounted_price  # Imports the consolidated pricing function
-from models import compute_cart_totals  # Imports the consolidated pricing function
+from models import calculate_discounted_price  # Imports the consolidated pricing function
 
 # Mock Inventory Item (Price is $100.00)
 @pytest.fixture
@@ -15,9 +15,8 @@ def test_fixed_amount_discount(mock_item):
     
     # Act
     # We pass the fixed discount amount to the function
-    # actual_price = calculate_discounted_price(mock_item['price'], fixed_discount=discount_amount)
-    actual_price = compute_cart_totals (mock_item['price'], fixed_discount=discount_amount)
-
+    actual_price = calculate_discounted_price(mock_item['price'], fixed_discount=discount_amount)
+    
     # Assert
     assert actual_price == expected_price
 
@@ -29,7 +28,7 @@ def test_percentage_discount(mock_item):
     
     # Act
     # We pass the percentage discount rate to the function
-    actual_price = compute_cart_totals(mock_item['price'], percentage_discount=discount_percent)
+    actual_price = calculate_discounted_price(mock_item['price'], percentage_discount=discount_percent)
     
     # Assert
     assert actual_price == expected_price
@@ -38,7 +37,7 @@ def test_no_discount_applied(mock_item):
     """Ensures price remains unchanged if no discount is provided."""
     # Act
     # Call with no discount parameters
-    actual_price = compute_cart_totals(mock_item['price'])
+    actual_price = calculate_discounted_price(mock_item['price'])
     
     # Assert
     assert actual_price == mock_item['price']
@@ -52,7 +51,7 @@ def test_discount_with_rounding():
     
     # Act
     # actual_price = calculate_discounted_price(price, percentage_discount=discount_percent)
-    actual_price = compute_cart_totals(price, percentage_discount=discount_percent)
+    actual_price = calculate_discounted_price(price, percentage_discount=discount_percent)
 
 
     # Assert
