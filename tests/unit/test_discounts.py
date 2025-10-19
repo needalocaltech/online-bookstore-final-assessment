@@ -29,7 +29,7 @@ def test_percentage_discount(mock_item):
     
     # Act
     # We pass the percentage discount rate to the function
-    actual_price = calculate_discounted_price(mock_item['price'], percentage_discount=discount_percent)
+    actual_price = compute_cart_totals(mock_item['price'], percentage_discount=discount_percent)
     
     # Assert
     assert actual_price == expected_price
@@ -38,7 +38,7 @@ def test_no_discount_applied(mock_item):
     """Ensures price remains unchanged if no discount is provided."""
     # Act
     # Call with no discount parameters
-    actual_price = calculate_discounted_price(mock_item['price'])
+    actual_price = compute_cart_totals(mock_item['price'])
     
     # Assert
     assert actual_price == mock_item['price']
@@ -52,7 +52,7 @@ def test_discount_with_rounding():
     
     # Act
     # actual_price = calculate_discounted_price(price, percentage_discount=discount_percent)
-    actual_price = calculate_discounted_price(price, percentage_discount=discount_percent)
+    actual_price = compute_cart_totals(price, percentage_discount=discount_percent)
 
 
     # Assert
