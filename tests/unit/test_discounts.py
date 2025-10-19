@@ -1,7 +1,7 @@
 import pytest
 # from models_0 import calculate_discounted_price  # Imports the consolidated pricing function
 from models import calculate_discounted_price  # Imports the consolidated pricing function
-from models import apply_discount #
+from models import apply_discount
 # Mock Inventory Item (Price is $100.00)
 @pytest.fixture
 def mock_item():
@@ -28,8 +28,7 @@ def test_percentage_discount(mock_item):
     
     # Act
     # We pass the percentage discount rate to the function
-    # actual_price = calculate_discounted_price(mock_item['price'], percentage_discount=discount_percent)
-    actual_price = apply_discount(mock_item['price'], pct=discount_percent)
+    actual_price = calculate_discounted_price(mock_item['price'], percentage_discount=discount_percent)
     
     # Assert
     assert actual_price == expected_price
