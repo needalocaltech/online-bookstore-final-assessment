@@ -207,7 +207,10 @@ class PaymentGateway:
         
         time.sleep(0.1)
         
-        transaction_id = f"TXN{random.randint(100000, 999999)}"
+        # transaction_id = f"TXN{random.randint(100000, 999999)}"
+        import secrets
+        
+        transaction_id = f"TXN{secrets.randbelow(900000) + 100000}"
         
         if payment_info.get('payment_method') == 'paypal':
             pass
