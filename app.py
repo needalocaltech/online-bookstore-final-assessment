@@ -27,6 +27,8 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from models import Book, Cart, User, Order, PaymentGateway, EmailService
 import uuid
+import os
+import secrets
 
 ########
 
@@ -43,7 +45,9 @@ import uuid
 # ########
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Required for sessiontyement
+# app.secret_key = 'your_secret_key'  # Required for sessiontyement
+
+app.secret_key = os.environ.get("SECRET_KEY", secrets.token_urlsafe(32))
 
 # Global storage for users and orders (in production, use a database)
 users = {}  # email -> User object
