@@ -1,4 +1,5 @@
 # ========= Test-friendly pricing helpers (thin wrappers) =========
+import uuid
 from typing import Iterable, Dict, Any, List, Tuple
 
 DISCOUNT_TABLE = {
@@ -207,8 +208,10 @@ class PaymentGateway:
         
         time.sleep(0.1)
         
-        transaction_id = f"TXN{random.randint(100000, 999999)}"
-        
+        # transaction_id = f"TXN{random.randint(100000, 999999)}"
+        transaction_id = f"TXN{uuid.uuid4().hex[:12].upper()}"
+
+
         if payment_info.get('payment_method') == 'paypal':
             pass
         
