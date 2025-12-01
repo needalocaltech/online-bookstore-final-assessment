@@ -1,2 +1,2 @@
-5k runs: 0.0157s
-Avg per run: 0.00000314s
+5k runs: 0.0161s
+Avg per run: 0.00000321s
