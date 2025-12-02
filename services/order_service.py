@@ -14,7 +14,7 @@ _USER_ORDERS: Dict[str, List[Order]] = {}
 
 def init_store() -> None:
     """Initialise in-memory order store."""
-    # Kept for symmetry with other services and future DB wiring.
+    # Kept for symmetry and future DB wiring
     return
 
 

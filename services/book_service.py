@@ -28,3 +28,14 @@ def get_book_by_title(title: str) -> Optional[Book]:
         if book.title == title:
             return book
     return None
+
+
+def create_book(title: str, genre: str, price: float, image_url: str) -> Book:
+    """
+    Create a new Book and add it to the in-memory catalogue.
+
+    In a future version this will write to a database instead of a list.
+    """
+    book = Book(title, genre, price, image_url)
+    _BOOKS.append(book)
+    return book

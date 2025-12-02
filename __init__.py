@@ -1,9 +1,18 @@
 import os
+import logging
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+
 from flask import Flask
-from .config import CONFIG_BY_NAME
+from flask_wtf.csrf import CSRFProtect
+
+from .config import CONFIG_BY_NAME, ProductionConfig
 
 # Services
 from .services import user_service, book_service, cart_service, order_service
+
+# Global CSRF protector
+csrf = CSRFProtect()
 
 
 def create_app(config_name: str | None = None) -> Flask:
@@ -20,6 +29,32 @@ def create_app(config_name: str | None = None) -> Flask:
     env = config_name or os.environ.get("FLASK_ENV", "development")
     config_cls = CONFIG_BY_NAME.get(env, CONFIG_BY_NAME["development"])
     app.config.from_object(config_cls)
+
+    # In production, fail fast if insecure defaults are used
+    if isinstance(config_cls, type) and issubclass(config_cls, ProductionConfig):
+        config_cls.validate()
+
+    # --- Security: CSRF protection on all modifying requests ---
+    csrf.init_app(app)
+
+    # --- Logging / audit trail (rotating log file) ---
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+
+    handler = RotatingFileHandler(
+        log_dir / "bookstore.log",
+        maxBytes=1_000_000,
+        backupCount=5,
+        encoding="utf-8",
+    )
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s - %(message)s"
+    )
+    handler.setFormatter(formatter)
+
+    app.logger.setLevel(logging.INFO)
+    app.logger.addHandler(handler)
+    logging.getLogger().addHandler(handler)
 
     # --- Initialise core domain/services ---
     user_service.init_demo_user()
@@ -39,5 +74,19 @@ def create_app(config_name: str | None = None) -> Flask:
     app.register_blueprint(auth_bp)                 # '/login', '/register', '/account'
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(api_bp, url_prefix="/api")
+
+    # --- Add basic security headers to every response ---
+    @app.after_request
+    def add_security_headers(response):
+        # Clickjacking protection
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        # MIME-type sniffing protection
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        # Simple Content Security Policy (lock down to same origin)
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'",
+        )
+        return response
 
     return app

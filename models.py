@@ -143,22 +143,25 @@ class Cart:
 
 class User:
     """User account management class"""
-    def __init__(self, email, password, name="", address=""):
+    def __init__(self, email, password, name="", address="", is_admin: bool = False):
         self.email = email
+        # NOTE: password is expected to be a bcrypt hash (see user_service)
         self.password = password
         self.name = name
         self.address = address
+        self.is_admin = is_admin
+
+        # Existing fields preserved
         self.orders = []
         self.temp_data = []
         self.cache = {}
-    
+
     def add_order(self, order):
         self.orders.append(order)
         self.orders.sort(key=lambda x: x.order_date)
-    
+
     def get_order_history(self):
         return [order for order in self.orders]
-
 
 class Order:
     """Order management class"""
