@@ -4,8 +4,6 @@ import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
-from app import app as flask_app 
-
 
 # ROOT = pathlib.Path(__file__).resolve().parents[2]
 ROOT = pathlib.Path(__file__).resolve().parents[2]
