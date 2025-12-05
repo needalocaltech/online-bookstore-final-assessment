@@ -1,11 +1,10 @@
-from flask import Blueprint, Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 # from models_not_quite_working import Book, Cart, User, Order, PaymentGateway, EmailService
 from models import Book, Cart, User, Order, PaymentGateway, EmailService
 import uuid
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for session management
-store_bp = Blueprint('store', __name__, url_prefix='/store')
 
 # Global storage for users and orders (in production, use a database)
 users = {}  # email -> User object
@@ -49,33 +48,8 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-##########################
-def create_app(test_config=None):
-    # Create and configure the app
-    app = Flask(__name__)
-    
-    if test_config:
-        app.config.update(test_config)
 
-    # Register your routes here, inside the function
-    @app.route('/')
-    def index():
-        return render_template('index.html')
-        
-    # Other routes/blueprints go here...
-###########################
-###########################        
-    return app
-
-if __name__ == '__main__':
-    # This block runs the app only when executed directly (not during tests)
-    app = create_app()
-    app.run(debug=True)
-
-###########################
-
-# @app.route('/')
-@store_bp.route('/')
+@app.route('/')
 def index():
     current_user = get_current_user()
     return render_template('index.html', books=BOOKS, cart=cart, current_user=current_user)
