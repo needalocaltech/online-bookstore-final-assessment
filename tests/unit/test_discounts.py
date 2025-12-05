@@ -1,6 +1,7 @@
 import pytest
 # from models_0 import calculate_discounted_price  # Imports the consolidated pricing function
-from models_not_quite_working import calculate_discounted_price  # Imports the consolidated pricing function
+# from models_not_quite_working import calculate_discounted_price  # Imports the consolidated pricing function
+from models import calculate_discounted_price
 
 # Mock Inventory Item (Price is $100.00)
 @pytest.fixture
