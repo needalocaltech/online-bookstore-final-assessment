@@ -280,7 +280,7 @@ def test_tc16_security_unauthorised_access_check():
     """
     from app import app
 
-def test_tc01_user_registration_success(client):
+def test_tc01_user_registration_success():
     # client can be a pytest fixture using app.test_client()
     resp = client.post("/register", data={
         "email": "newuser@example.com",
