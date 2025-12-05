@@ -279,7 +279,7 @@ def test_tc16_security_unauthorised_access_check():
          (e.g. /checkout, /my-orders, /admin).
     """
     from app import app
-    from app import app.test_client
+    from app import test_client
 
 def test_tc01_user_registration_success(client):
     # client can be a pytest fixture using app.test_client()
