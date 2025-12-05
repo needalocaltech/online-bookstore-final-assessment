@@ -49,8 +49,32 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+##########################
+def create_app(test_config=None):
+    # Create and configure the app
+    app = Flask(__name__)
+    
+    if test_config:
+        app.config.update(test_config)
 
-@app.route('/')
+    # Register your routes here, inside the function
+    @app.route('/')
+    def index():
+        return render_template('index.html')
+        
+    # Other routes/blueprints go here...
+###########################
+###########################        
+    return app
+
+if __name__ == '__main__':
+    # This block runs the app only when executed directly (not during tests)
+    app = create_app()
+    app.run(debug=True)
+
+###########################
+
+# @app.route('/')
 @store_bp.route('/')
 def index():
     current_user = get_current_user()
