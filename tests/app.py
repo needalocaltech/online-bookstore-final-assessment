@@ -50,7 +50,7 @@ def login_required(f):
     return decorated_function
 
 
-# @app.route('/')
+@app.route('/')
 @store_bp.route('/')
 def index():
     current_user = get_current_user()
