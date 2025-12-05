@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
-from models_not_quite_working import Book, Cart, User, Order, PaymentGateway, EmailService
+# from models_not_quite_working import Book, Cart, User, Order, PaymentGateway, EmailService
+from models import Book, Cart, User, Order, PaymentGateway, EmailService
 import uuid
 
 app = Flask(__name__)
