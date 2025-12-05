@@ -1,4 +1,4 @@
-from app import app
+from app_old import app
 
 print("=== URL MAP ===")
 for r in app.url_map.iter_rules():

@@ -1,6 +1,6 @@
 # tests/performance/profile_checkout.py
 import cProfile, pstats, io, pathlib
-from app import app
+from app_old import app
 
 out_dir = pathlib.Path("evidence/perf")
 out_dir.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Admin: Manage RSS Feeds</h2>
+
+<form method="POST">
+    <label>Book Review Feed URL:</label>
+    <input type="text" name="reviews_feed" value="{{ rss.reviews }}" class="form-control">
+
+    <label>Author News Feed URL:</label>
+    <input type="text" name="authors_feed" value="{{ rss.authors }}" class="form-control">
+
+    <button class="btn btn-primary" type="submit">Save</button>
+</form>
+
+{% endblock %}

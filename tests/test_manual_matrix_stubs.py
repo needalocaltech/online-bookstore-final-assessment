@@ -278,7 +278,7 @@ def test_tc16_security_unauthorised_access_check():
       1. While logged out, attempt to access protected URLs
          (e.g. /checkout, /my-orders, /admin).
     """
-    from app import app
+    from app_old import app
 
 def test_tc01_user_registration_success(client):
     # client can be a pytest fixture using app.test_client()

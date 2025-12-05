@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template
-from bookstore.services import book_service, cart_service, user_service
+from services import book_service, cart_service, user_service  # <-- fixed
 
 store_bp = Blueprint("store", __name__)
 

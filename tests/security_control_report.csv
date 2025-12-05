@@ -1,10 +1,11 @@
 Control,Status,File
 ENV_SECRET_KEY (ISO A.10 / NIST SC-12),MISSING,
+SQLAlchemy Configured (ISO A.12 / NIST SC-28),MISSING,
+HttpOnly / SameSite Cookies (ISO A.9.4 / NIST SC-23),MISSING,
 CSRF Protection Enabled (ISO A.14 / NIST SC-5),MISSING,
 Security Headers Added (ISO A.14 / NIST SC-18),MISSING,
-HttpOnly / Secure Cookies (ISO A.9.4 / NIST SC-23),MISSING,
-Password Policy Enforcement (ISO A.9.2.4 / NIST IA-5),MISSING,
 bcrypt Password Hashing (ISO A.9 / NIST IA-5),MISSING,
+Password Policy Enforcement (ISO A.9.2.4 / NIST IA-5),MISSING,
 Account Lockout Enabled (ISO A.9.4.4 / NIST AC-7),MISSING,
 RBAC Admin Required (ISO A.9.1.2 / NIST AC-3),MISSING,
 Audit Logging (ISO A.12.4 / NIST AU-2),MISSING,

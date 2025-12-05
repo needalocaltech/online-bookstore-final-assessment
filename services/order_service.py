@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 from models import Order, EmailService
 from .cart_service import get_cart
 
+
 # All orders keyed by order_id (for confirmation page)
 _ORDERS: Dict[str, Order] = {}
 

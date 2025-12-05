@@ -53,3 +53,5 @@ CONFIG_BY_NAME = {
     "testing": TestingConfig,
     "production": ProductionConfig,
 }
+
+SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///bookstore.db")

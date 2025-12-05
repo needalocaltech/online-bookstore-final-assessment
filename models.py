@@ -1,3 +1,6 @@
+
+from db import db  # local SQLAlchemy instance
+
 # ========= Test-friendly pricing helpers (thin wrappers) =========
 from typing import Iterable, Dict, Any, List, Tuple
 
@@ -67,13 +70,21 @@ def compute_cart_totals(cart: Iterable, codes: Iterable[str] = None) -> Dict[str
 
 
 
-class Book:
+class Book(db.Model):
+    """Persistent book record stored in the database."""
+    __tablename__ = "books"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), unique=True, nullable=False)
+    category = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    image = db.Column(db.String(255), nullable=True)
+
     def __init__(self, title, category, price, image):
         self.title = title
         self.category = category
-        self.price = price
+        self.price = float(price)
         self.image = image
-
 
 class CartItem:
     def __init__(self, book, quantity=1):
@@ -142,19 +153,58 @@ class Cart:
 
 
 class User:
-    """User account management class"""
-    def __init__(self, email, password, name="", address="", is_admin: bool = False):
+    """User account management class with role support.
+
+    Roles:
+        - 'user'     : standard customer (can browse, buy, view own orders)
+        - 'reviewer' : can do reviewer-only actions (e.g., moderate reviews)
+        - 'admin'    : full admin access (catalogue and user management)
+    """
+
+    def __init__(
+        self,
+        email,
+        password,
+        name: str = "",
+        address: str = "",
+        is_admin: bool = False,
+        role: str = "user",
+    ):
+        """
+        :param email: user email (unique identifier)
+        :param password: bcrypt-hashed password (see user_service)
+        :param name: display name
+        :param address: postal address
+        :param is_admin: legacy flag used by earlier versions (kept for compatibility)
+        :param role: 'user', 'reviewer', or 'admin' (preferred going forward)
+        """
         self.email = email
-        # NOTE: password is expected to be a bcrypt hash (see user_service)
         self.password = password
         self.name = name
         self.address = address
-        self.is_admin = is_admin
+
+        # --- Role handling (new) ---
+        # Normalise and reconcile 'role' with legacy 'is_admin' flag
+        role = (role or "user").strip().lower()
+
+        # If old code passes is_admin=True but no explicit role, treat as admin
+        if is_admin and role == "user":
+            role = "admin"
+
+        # Guard against invalid roles
+        if role not in {"user", "reviewer", "admin"}:
+            role = "user"
+
+        self.role = role
+        # Keep is_admin attribute for backwards compatibility
+        self.is_admin = (self.role == "admin")
 
         # Existing fields preserved
         self.orders = []
         self.temp_data = []
         self.cache = {}
+
+    # --- Order helpers (unchanged) ---
 
     def add_order(self, order):
         self.orders.append(order)
@@ -162,6 +212,18 @@ class User:
 
     def get_order_history(self):
         return [order for order in self.orders]
+
+    # --- Convenience properties for role checks ---
+
+    @property
+    def is_reviewer(self) -> bool:
+        """True if the user has reviewer role."""
+        return self.role == "reviewer"
+
+    @property
+    def is_user(self) -> bool:
+        """True if the user is a standard (non-admin, non-reviewer) user."""
+        return self.role == "user"
 
 class Order:
     """Order management class"""

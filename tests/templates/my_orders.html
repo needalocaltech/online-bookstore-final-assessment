@@ -1,0 +1,17 @@
+@auth_bp.route("/my-orders")
+@login_required
+def my_orders():
+    """
+    Show the order history for the currently logged-in user.
+
+    Orders are retrieved via the OrderService, which currently
+    uses an in-memory store but can be swapped for a database later.
+    """
+    current_user = user_service.get_current_user()
+    orders = order_service.get_orders_for_user(current_user.email)
+
+    return render_template(
+        "my_orders.html",
+        current_user=current_user,
+        orders=orders,
+    )

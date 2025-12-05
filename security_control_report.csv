@@ -1,0 +1,11 @@
+Control,Status,File
+ENV_SECRET_KEY (ISO A.10 / NIST SC-12),ENABLED,config.py
+SQLAlchemy Configured (ISO A.12 / NIST SC-28),ENABLED,config.py
+HttpOnly / SameSite Cookies (ISO A.9.4 / NIST SC-23),ENABLED,config.py
+CSRF Protection Enabled (ISO A.14 / NIST SC-5),ENABLED,__init__.py
+Security Headers Added (ISO A.14 / NIST SC-18),ENABLED,__init__.py
+bcrypt Password Hashing (ISO A.9 / NIST IA-5),ENABLED,services\user_service.py
+Password Policy Enforcement (ISO A.9.2.4 / NIST IA-5),ENABLED,services\user_service.py
+Account Lockout Enabled (ISO A.9.4.4 / NIST AC-7),ENABLED,services\user_service.py
+RBAC Admin Required (ISO A.9.1.2 / NIST AC-3),ENABLED,routes\auth.py
+Audit Logging (ISO A.12.4 / NIST AU-2),ENABLED,__init__.py

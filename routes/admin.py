@@ -2,8 +2,8 @@ import logging
 
 from flask import Blueprint, render_template, flash, request, redirect, url_for
 
-from bookstore.routes.auth import login_required, admin_required
-from bookstore.services import user_service, book_service
+from routes.auth import login_required, admin_required
+from services import user_service, book_service
 
 logger = logging.getLogger(__name__)
 

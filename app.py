@@ -1,389 +1,434 @@
-# # app.py  (place at the repo root, same level as tests/, models.py, etc.)
-# from __future__ import annotations
-
-# # Try your application factory first (if you have one), otherwise make a minimal app.
-# try:
-#     # >>> Adjust this import to your real factory location if you have one
-#     from app import create_app  # e.g., from myapp import create_app
-# except Exception:
-#     create_app = None  # no factory available or it failed to import
-
-# if create_app is not None:
-#     app = create_app()  # must be named exactly `app`
-# else:
-#     # Minimal fallback app so tests can import `app` without crashing
-#     from flask import Flask, jsonify
-
-#     app = Flask(__name__)
-#     app.config.from_mapping(SECRET_KEY="test-secret", TESTING=True)
-
-#     @app.get("/health")
-#     def health():
-#         return jsonify(status="ok")
-
-###########
-###########
+# --------------------------
+# RSS Caching (in-memory)
+# --------------------------
+RSS_CACHE = {}
+RSS_CACHE_TTL = 300  # cache for 5 minutes
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from models import Book, Cart, User, Order, PaymentGateway, EmailService
 import uuid
 import os
 import secrets
+import datetime
+import sqlite3
+from pathlib import Path
+import feedparser
 import bcrypt
+import time
 
-########
+def fetch_rss_items(url: str, limit: int = 5):
+    """
+    Fetch and return RSS feed items with caching (5 min default).
+    Falls back safely if feed is unavailable.
+    """
+    now = time.time()
 
-# # app.py
-# from flask import Flask, jsonify
+    # If in cache and not expired
+    if url in RSS_CACHE:
+        cached_data = RSS_CACHE[url]
+        if now - cached_data["timestamp"] < RSS_CACHE_TTL:
+            return cached_data["items"][:limit]
 
-# # <-- This must exist at module import time
-# app = Flask(__name__)
-# app.config.from_mapping(SECRET_KEY="test-secret")
+    try:
+        feed = feedparser.parse(url)
+        items = feed.entries[:limit]
+    except Exception:
+        items = []
 
-# @app.get("/health")
-# def health():
-#     return jsonify(status="ok")
-# ########
-# import brcypt
-import bcrypt
+    RSS_CACHE[url] = {"timestamp": now, "items": items}
+    return items
 
-# Password to hash
-# password = b"my_secure_password"
-password = b"demo123"
-# Generate a salt
-salt = bcrypt.gensalt()
-
-# Hash the password
-hashed_password = bcrypt.hashpw(password, salt)
-
-print("Hashed Password:", hashed_password)
-
+###########################################################
+# FLASK APP INITIALISATION
+###########################################################
 
 app = Flask(__name__)
-# app.secret_key = 'your_secret_key'  # Required for sessiontyement
-
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_urlsafe(32))
 
-# Global storage for users and orders (in production, use a database)
-users = {}  # email -> User object
-orders = {}  # order_id -> Order object
+"""
+app.py
 
-# Create demo user for testing
-demo_user = User("demo@bookstore.com", hashed_password, "Demo User", "123 Demo Street, Demo City, DC 12345")
-users["demo@bookstore.com"] = demo_user
+Entry point for the online bookstore application.
+"""
 
-# Create a cart instance to manage the cart
+from __init__ import create_app
+
+# Global app object for Flask / WSGI
+app = create_app()
+
+
+if __name__ == "__main__":
+    import os
+
+    host = os.environ.get("FLASK_RUN_HOST", "127.0.0.1")
+    port = int(os.environ.get("FLASK_RUN_PORT", "5000"))
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+
+    print("Starting Online Bookstore on http://%s:%s" % (host, port))
+    app.run(host=host, port=port, debug=debug)
+
+###########################################################
+# SQLITE BOOK DATABASE FUNCTIONS
+###########################################################
+
+DB_PATH = Path(__file__).with_name("books.db")
+
+
+def init_books_db() -> None:
+    """Create books.db and seed demo books."""
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS books (
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            title    TEXT NOT NULL UNIQUE,
+            category TEXT NOT NULL,
+            price    REAL NOT NULL,
+            image    TEXT
+        )
+    """)
+
+    cur.execute("SELECT COUNT(*) FROM books")
+    (count,) = cur.fetchone()
+
+    if count == 0:
+        default_books = [
+            ("I Ching", "Traditional", 18.99, "static/images/I-Ching.jpg"),
+            ("The Great Gatsby", "Fiction", 10.99, "static/images/default-book.jpg"),
+            ("1984", "Dystopia", 8.99, "static/images/default-book.jpg"),
+            ("Moby Dick", "Adventure", 12.49, "static/images/default-book.jpg"),
+            ("Pride and Prejudice", "Romance", 9.99, "static/images/default-book.jpg"),
+            ("Clean Code", "Technology", 29.99, "static/images/default-book.jpg"),
+            ("Python Crash Course", "Technology", 24.99, "static/images/default-book.jpg"),
+        ]
+        cur.executemany(
+            "INSERT INTO books (title, category, price, image) VALUES (?, ?, ?, ?)",
+            default_books,
+        )
+
+    conn.commit()
+    conn.close()
+
+
+def load_books_from_db():
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT title, category, price, image FROM books ORDER BY title")
+    rows = cur.fetchall()
+    conn.close()
+    return [Book(title, category, price, image) for (title, category, price, image) in rows]
+
+
+def insert_book_into_db(title: str, category: str, price: float, image: str):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO books (title, category, price, image) VALUES (?, ?, ?, ?)",
+        (title, category, price, image),
+    )
+    conn.commit()
+    conn.close()
+
+
+# Initialise DB + load books
+init_books_db()
+BOOKS = load_books_from_db()
+
+###########################################################
+# RSS FEED SUPPORT
+###########################################################
+RSS_SOURCES = {
+    "reviews": "https://www.goodreads.com/review/list_rss/1.xml",
+    "authors": "https://www.theguardian.com/books/authors/rss",
+}
+
+
+def fetch_rss_items(url: str, limit: int = 5):
+    """Return list of RSS entries (safe fallback if feed unavailable)."""
+    try:
+        feed = feedparser.parse(url)
+        return feed.entries[:limit]
+    except Exception:
+        return []
+
+###########################################################
+# GLOBALS / USERS / HELPERS
+###########################################################
+
+users = {}
+orders = []
 cart = Cart()
 
-# Create a global books list to avoid duplication
-BOOKS = [
-    Book("The Great Gatsby", "Fiction", 10.99, "/images/books/the_great_gatsby.jpg"),
-    Book("1984", "Dystopia", 8.99, "/images/books/1984.jpg"),
-    Book("I Ching", "Traditional", 18.99, "/images/books/I-Ching.jpg"),
-    Book("Moby Dick", "Adventure", 12.49, "/images/books/moby_dick.jpg")
-]
-
-def get_book_by_title(title):
-    """Helper function to find a book by title"""
-    return next((book for book in BOOKS if book.title == title), None)
+admin_email = "admin@bookstore.com"
+admin_password = "Admin123!"
+users[admin_email] = User(admin_email, admin_password, "Admin User", "123 Admin Street", is_admin=True)
 
 
-def get_current_user():
-    """Helper function to get current logged-in user"""
-    if 'user_email' in session:
-        return users.get(session['user_email'])
-    return None
+demo_email = "demo@bookstore.com"
+demo_password = "demo123"
+users[demo_email] = User(demo_email, demo_password, "Demo User", "123 Demo Street")
 
 
 def login_required(f):
-    """Decorator to require login for certain routes"""
     from functools import wraps
     @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_email' not in session:
-            flash('Please log in to access this page.', 'error')
-            return redirect(url_for('login'))
+    def wrapped(*args, **kwargs):
+        if "user_email" not in session:
+            flash("Please log in first.", "error")
+            return redirect(url_for("login"))
         return f(*args, **kwargs)
-    return decorated_function
+    return wrapped
 
 
-@app.route('/')
+def get_current_user():
+    email = session.get("user_email")
+    return users.get(email)
+
+###########################################################
+# HOME PAGE (BOOK LIST + FILTER + SEARCH + RSS FEEDS)
+###########################################################
+
+@app.route("/")
 def index():
+    global BOOKS
+    BOOKS = load_books_from_db()
+
     current_user = get_current_user()
-    return render_template('index.html', books=BOOKS, cart=cart, current_user=current_user)
 
+    selected_category = (request.args.get("category") or "").strip()
+    search_query = (request.args.get("q") or "").strip().lower()
 
-@app.route('/add-to-cart', methods=['POST'])
-def add_to_cart():
-    book_title = request.form.get('title')
-    quantity = int(request.form.get('quantity', 1))
-    
-    book = None
-    for b in BOOKS:
-        if b.title == book_title:
-            book = b
-            break
-    
-    if book:
-        cart.add_book(book, quantity)
-        flash(f'Added {quantity} "{book.title}" to cart!', 'success')
-    else:
-        flash('Book not found!', 'error')
+    filtered = BOOKS
 
-    return redirect(url_for('index'))
+    if selected_category:
+        filtered = [b for b in filtered if b.category.lower() == selected_category.lower()]
 
+    if search_query:
+        filtered = [
+            b for b in filtered
+            if search_query in b.title.lower() or search_query in b.category.lower()
+        ]
 
-@app.route('/remove-from-cart', methods=['POST'])
-def remove_from_cart():
-    book_title = request.form.get('title')
-    cart.remove_book(book_title)
-    flash(f'Removed "{book_title}" from cart!', 'success')
-    return redirect(url_for('view_cart'))
+    categories = sorted({b.category for b in BOOKS})
 
+    # --- RSS FEEDS ---
+    reviews_rss_url = "https://www.goodreads.com/review/list_rss/1.xml"
+    author_news_rss_url = "https://www.theguardian.com/books/authors/rss"
 
-@app.route('/update-cart', methods=['POST'])
-def update_cart():
-    """
-    Update the quantity of a book in the cart.
-    This function handles HTTP POST requests to update the quantity of a book in the user's cart.
-    If the quantity is set to 0 or less, the book is effectively removed from the cart.
-    Args:
-        None (uses form data from the request)
-    Returns:
-        Response: Redirects to the view_cart page after updating the cart.
-    Form Parameters:
-        title (str): The title of the book to update.
-        quantity (int): The new quantity of the book. Defaults to 1.
-    Flash Messages:
-        - Confirmation of removal if quantity <= 0
-        - Confirmation of update otherwise
-    """
-    book_title = request.form.get('title')
-    quantity = int(request.form.get('quantity', 1))
-    
-    cart.update_quantity(book_title, quantity)
-    
-    if quantity <= 0:
-        flash(f'Removed "{book_title}" from cart!', 'success')
-    else:
-        flash(f'Updated "{book_title}" quantity to {quantity}!', 'success')
-    
-    return redirect(url_for('view_cart'))
+    reviews_feed = fetch_rss_items(reviews_rss_url, limit=5)
+    author_news_feed = fetch_rss_items(author_news_rss_url, limit=5)
 
-
-@app.route('/cart')
-def view_cart():
-    current_user = get_current_user()
-    return render_template('cart.html', cart=cart, current_user=current_user)
-
-
-@app.route('/clear-cart', methods=['POST'])
-def clear_cart():
-    cart.clear()
-    flash('Cart cleared!', 'success')
-    return redirect(url_for('view_cart'))
-
-
-@app.route('/checkout',methods=['POST',"GET"])
-def checkout():
-    if cart.is_empty():
-        flash('Your cart is empty!', 'error')
-        return redirect(url_for('index'))
-    
-    current_user = get_current_user()
-    total_price = cart.get_total_price()
-    return render_template('checkout.html', cart=cart, total_price=total_price, current_user=current_user)
-
-
-@app.route('/process-checkout', methods=['POST'])
-def process_checkout():
-    """Process the checkout form with shipping and payment information"""
-    if cart.is_empty():
-        flash('Your cart is empty!', 'error')
-        return redirect(url_for('index'))
-    
-    # Get form data
-    shipping_info = {
-        'name': request.form.get('name'),
-        'email': request.form.get('email'),
-        'address': request.form.get('address'),
-        'city': request.form.get('city'),
-        'zip_code': request.form.get('zip_code')
-    }
-    
-    payment_info = {
-        'payment_method': request.form.get('payment_method'),
-        'card_number': request.form.get('card_number'),
-        'expiry_date': request.form.get('expiry_date'),
-        'cvv': request.form.get('cvv')
-    }
-    
-    discount_code = request.form.get('discount_code', '')
-    
-    # Calculate total with discount
-    total_amount = cart.get_total_price()
-    discount_applied = 0
-    
-    if discount_code == 'SAVE10':
-        discount_applied = total_amount * 0.10
-        total_amount -= discount_applied
-        flash(f'Discount applied! You saved ${discount_applied:.2f}', 'success')
-    elif discount_code == 'WELCOME20':
-        discount_applied = total_amount * 0.20
-        total_amount -= discount_applied
-        flash(f'Welcome discount applied! You saved ${discount_applied:.2f}', 'success')
-    elif discount_code:
-        flash('Invalid discount code', 'error')
-    
-    required_fields = ['name', 'email', 'address', 'city', 'zip_code']
-    for field in required_fields:
-        if not shipping_info.get(field):
-            flash(f'Please fill in the {field.replace("_", " ")} field', 'error')
-            return redirect(url_for('checkout'))
-    
-    if payment_info['payment_method'] == 'credit_card':
-        if not payment_info.get('card_number') or not payment_info.get('expiry_date') or not payment_info.get('cvv'):
-            flash('Please fill in all credit card details', 'error')
-            return redirect(url_for('checkout'))
-    
-    # Process payment through mock gateway
-    payment_result = PaymentGateway.process_payment(payment_info)
-    
-    if not payment_result['success']:
-        flash(payment_result['message'], 'error')
-        return redirect(url_for('checkout'))
-    
-    # Create order
-    order_id = str(uuid.uuid4())[:8].upper()
-    order = Order(
-        order_id=order_id,
-        user_email=shipping_info['email'],
-        items=cart.get_items(),
-        shipping_info=shipping_info,
-        payment_info={
-            'method': payment_info['payment_method'],
-            'transaction_id': payment_result['transaction_id']
-        },
-        total_amount=total_amount
+    return render_template(
+        "index.html",
+        books=filtered,
+        categories=categories,
+        selected_category=selected_category,
+        search_query=search_query,
+        cart=cart,
+        current_user=current_user,
+        reviews_feed=reviews_feed,
+        author_news_feed=author_news_feed,
     )
-    
-    # Store order
-    orders[order_id] = order
-    
-    # Add order to user if logged in
+
+###########################################################
+# CART ROUTES
+###########################################################
+
+@app.route("/cart")
+def view_cart():
+    """Show the current shopping cart."""
+    return render_template("cart.html", cart=cart, current_user=get_current_user())
+
+
+@app.route("/add-to-cart", methods=["POST"])
+def add_to_cart():
+    """
+    Add a book to the cart.
+
+    The form on index.html should send:
+        - title    (hidden input with the book title)
+        - quantity (optional; defaults to 1)
+    """
+    title = (request.form.get("title") or "").strip()
+    qty_raw = request.form.get("quantity") or "1"
+
+    if not title:
+        flash("Book title is missing.", "error")
+        return redirect(url_for("index"))
+
+    # Find the book in the loaded catalogue
+    book = next((b for b in BOOKS if b.title == title), None)
+    if not book:
+        flash("Book not found.", "error")
+        return redirect(url_for("index"))
+
+    # Quantity handling (Cart internally can ignore if not used)
+    try:
+        quantity = max(1, int(qty_raw))
+    except ValueError:
+        quantity = 1
+
+    # For this original Cart class, we just add the book once per quantity
+    for _ in range(quantity):
+        cart.add_item(book)
+
+    flash(f"Added {quantity} × '{book.title}' to your cart!", "success")
+    return redirect(url_for("index"))
+
+###########################################################
+# CHECKOUT
+###########################################################
+
+@app.route("/checkout", methods=["GET", "POST"])
+@login_required
+def checkout():
     current_user = get_current_user()
-    if current_user:
-        current_user.add_order(order)
-    
-    # Send confirmation email (mock)
-    EmailService.send_order_confirmation(shipping_info['email'], order)
-    
-    # Clear cart
-    cart.clear()
-    
-    # Store order in session for confirmation page
-    session['last_order_id'] = order_id
-    
-    flash('Payment successful! Your order has been confirmed.', 'success')
-    return redirect(url_for('order_confirmation', order_id=order_id))
 
+    if request.method == "POST":
 
-@app.route('/order-confirmation/<order_id>')
-def order_confirmation(order_id):
-    """Display order confirmation page"""
-    order = orders.get(order_id)
-    if not order:
-        flash('Order not found', 'error')
-        return redirect(url_for('index'))
-    
+        shipping = {
+            "name": request.form["name"],
+            "email": request.form["email"],
+            "address": request.form["address"],
+            "city": request.form["city"],
+            "zip_code": request.form["zip_code"],
+        }
+
+        payment_gateway = PaymentGateway()
+        email_service = EmailService()
+
+        if not cart.items:
+            flash("Your cart is empty.", "error")
+            return redirect(url_for("view_cart"))
+
+        total = cart.get_total()
+        discount_code = request.form.get("discount_code")
+        discount_applied = 0
+
+        if discount_code == "save10":
+            discount_applied = total * 0.10
+            total -= discount_applied
+        elif discount_code == "WELCOME20":
+            discount_applied = total * 0.20
+            total -= discount_applied
+        elif discount_code:
+            flash("Invalid discount code", "error")
+
+        payment_result = payment_gateway.process_payment(total)
+
+        if payment_result["success"]:
+            order = Order(current_user, cart.items.copy(), total, "completed", discount_applied)
+            orders.append(order)
+            cart.clear()
+            flash("Order placed!", "success")
+            return redirect(url_for("index"))
+        else:
+            flash("Payment failed.", "error")
+
+    return render_template("checkout.html", cart=cart, current_user=current_user)
+
+###########################################################
+# ADMIN – ADD BOOKS (WRITES TO SQLITE)
+###########################################################
+
+@app.route("/admin", methods=["GET", "POST"])
+@login_required
+def admin_dashboard():
     current_user = get_current_user()
-    return render_template('order_confirmation.html', order=order, current_user=current_user)
 
+    if not current_user or current_user.email != admin_email:
+        flash("Admins only.", "error")
+        return redirect(url_for("index"))
 
-# User Account Management Routes
+    global BOOKS
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    """User registration"""
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        name = request.form.get('name')
-        address = request.form.get('address', '')
-        
-        # Validate required fields
-        if not email or not password or not name:
-            flash('Please fill in all required fields', 'error')
-            return render_template('register.html')
-        
-        if email in users:
-            flash('An account with this email already exists', 'error')
-            return render_template('register.html')
-        
-        # Create new user
-        user = User(email, password, name, address)
-        users[email] = user
-        
-        # Log in the user
-        session['user_email'] = email
-        flash('Account created successfully! You are now logged in.', 'success')
-        return redirect(url_for('index'))
-    
-    return render_template('register.html')
+    if request.method == "POST":
+        title = request.form.get("new_title")
+        category = request.form.get("new_category")
+        price = request.form.get("new_price")
+        image = request.form.get("new_image") or "static/images/default-book.jpg"
 
+        if title and category and price:
+            try:
+                price = float(price)
+                insert_book_into_db(title, category, price, image)
+                BOOKS = load_books_from_db()
+                flash("Book added!", "success")
+            except ValueError:
+                flash("Invalid price.", "error")
+        else:
+            flash("Fill all required fields.", "error")
 
-@app.route('/login', methods=['GET', 'POST'])
+    return render_template("admin_dashboard.html", books=BOOKS, current_user=current_user)
+
+###########################################################
+# AUTH ROUTES
+###########################################################
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    """User login"""
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+
         user = users.get(email)
         if user and user.password == password:
-            session['user_email'] = email
-            flash('Logged in successfully!', 'success')
-            return redirect(url_for('index'))
-        else:
-            flash('Invalid email or password', 'error')
-    
-    return render_template('login.html')
+            session["user_email"] = email
+            flash("Logged in!", "success")
+            return redirect(url_for("index"))
+        flash("Invalid credentials.", "error")
+
+    return render_template("login.html")
 
 
-@app.route('/logout')
+@app.route("/logout")
 def logout():
-    """User logout"""
-    session.pop('user_email', None)
-    flash('Logged out successfully!', 'success')
-    return redirect(url_for('index'))
+    session.pop("user_email", None)
+    flash("Logged out.", "success")
+    return redirect(url_for("index"))
 
 
-@app.route('/account')
-@login_required
-def account():
-    """User account page"""
-    current_user = get_current_user()
-    return render_template('account.html', current_user=current_user)
+@app.route("/create-account", methods=["GET", "POST"])
+def create_account():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+        name = request.form["name"]
+        address = request.form.get("address", "")
 
+        if email in users:
+            flash("Email already exists.", "error")
+            return render_template("register.html")
 
-@app.route('/update-profile', methods=['POST'])
-@login_required
-def update_profile():
-    """Update user profile"""
-    current_user = get_current_user()
-    
-    current_user.name = request.form.get('name', current_user.name)
-    current_user.address = request.form.get('address', current_user.address)
-    
-    new_password = request.form.get('new_password')
-    if new_password:
-        current_user.password = new_password
-        flash('Password updated successfully!', 'success')
-    else:
-        flash('Profile updated successfully!', 'success')
-    
-    return redirect(url_for('account'))
+        users[email] = User(email, password, name, address)
+        session["user_email"] = email
+        flash("Account created!", "success")
+        return redirect(url_for("index"))
 
+    return render_template("register.html")
 
-if __name__ == '__main__':
+###########################################################
+# RUN APP
+###########################################################
+
+if __name__ == "__main__":
     app.run(debug=False)
+
+@app.route("/admin/rss", methods=["GET", "POST"])
+@login_required
+def admin_rss():
+    current_user = get_current_user()
+
+    if not current_user or not current_user.is_admin:
+        flash("Admins only.", "error")
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        RSS_SOURCES["reviews"] = request.form.get("reviews_feed")
+        RSS_SOURCES["authors"] = request.form.get("authors_feed")
+        flash("RSS feeds updated!", "success")
+
+    return render_template("admin_rss.html", rss=RSS_SOURCES)
+
+

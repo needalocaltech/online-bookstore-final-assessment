@@ -1,21 +1,24 @@
 from flask import Blueprint, jsonify
-from bookstore.services import book_service
 
-api_bp = Blueprint("api", __name__)
+from services import book_service
+
+api_bp = Blueprint("api", __name__, url_prefix="/api")
 
 
-@api_bp.get("/books")
+@api_bp.route("/books", methods=["GET"])
 def api_list_books():
-    """Simple JSON catalogue endpoint (future expansion)."""
+    """
+    Simple JSON API endpoint returning all books.
+    """
     books = book_service.get_all_books()
-    return jsonify(
-        [
-            {
-                "title": b.title,
-                "category": b.genre,
-                "price": b.price,
-                "image_url": b.image_url,
-            }
-            for b in books
-        ]
-    )
+    data = [
+        {
+            "title": b.title,
+            "author": b.author,
+            "price": float(b.price),
+            "genre": b.genre,
+            "isbn": b.isbn,
+        }
+        for b in books
+    ]
+    return jsonify(data)
