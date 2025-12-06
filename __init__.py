@@ -1,12 +1,20 @@
 import os
+import logging
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from flask import Flask
-from .config import CONFIG_BY_NAME
+from config import CONFIG_BY_NAME
 from flask_wtf.csrf import CSRFProtect
+
 
 from db import db
 
 # Services
 from .services import user_service, book_service, cart_service, order_service
+
+
+
+
 
 csrf = CSRFProtect()
 
