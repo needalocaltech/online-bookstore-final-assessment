@@ -1,10 +1,12 @@
 import os
 from flask import Flask
 from .config import CONFIG_BY_NAME
+from flask_wtf.csrf import CSRFProtect
 
 # Services
 from .services import user_service, book_service, cart_service, order_service
 
+csrf = CSRFProtect()
 
 def create_app(config_name: str | None = None) -> Flask:
     """
@@ -40,5 +42,8 @@ def create_app(config_name: str | None = None) -> Flask:
     app.register_blueprint(auth_bp)                 # '/login', '/register', '/account'
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(api_bp, url_prefix="/api")
+
+    # Enable CSRF protection on all modifying requests
+    csrf.init_app(app)
 
     return app
