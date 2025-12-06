@@ -3,6 +3,8 @@ from flask import Flask
 from .config import CONFIG_BY_NAME
 from flask_wtf.csrf import CSRFProtect
 
+from db import db
+
 # Services
 from .services import user_service, book_service, cart_service, order_service
 
@@ -23,6 +25,9 @@ def create_app(config_name: str | None = None) -> Flask:
     env = config_name or os.environ.get("FLASK_ENV", "development")
     config_cls = CONFIG_BY_NAME.get(env, CONFIG_BY_NAME["development"])
     app.config.from_object(config_cls)
+
+    # Initialise database
+    db.init_app(app)
 
     # --- Initialise core domain/services ---
     user_service.init_demo_user()
