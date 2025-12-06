@@ -5,7 +5,7 @@ from .config import CONFIG_BY_NAME
 # Services
 from .services import user_service, book_service, cart_service, order_service
 
-csrf = CSRFProtect()
+# csrf = CSRFProtect()
 
 def create_app(config_name: str | None = None) -> Flask:
     """
