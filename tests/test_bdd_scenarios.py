@@ -56,7 +56,7 @@ def test_scenario_browse_and_view_details(client):
     """
     
     # 1. Given/When I visit the home page /
-    home_response = client.get('/', follow_redirects=True)
+    home_response = client.get('/', follow_redirects=False)
     
     # Then I should see a list/grid of books (HTTP 200; at least one book title visible)
     assert home_response.status_code == 200
