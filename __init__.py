@@ -29,11 +29,41 @@ def create_app(config_name: str | None = None) -> Flask:
     # Initialise database
     db.init_app(app)
 
+    # Enable CSRF protection on all modifying requests
+    csrf.init_app(app)
+
+    # --- Logging / audit trail (rotating log file) ---
+    log_dir = Path("logs")
+    log_dir.mkdir(exist_ok=True)
+
+    handler = RotatingFileHandler(
+        log_dir / "bookstore.log",
+        maxBytes=1_000_000,
+        backupCount=5,
+        encoding="utf-8",
+    )
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s - %(message)s"
+    )
+    handler.setFormatter(formatter)
+
+    app.logger.setLevel(logging.INFO)
+    app.logger.addHandler(handler)
+    logging.getLogger().addHandler(handler)
+
     # --- Initialise core domain/services ---
-    user_service.init_demo_user()
-    book_service.init_books()
-    cart_service.init_cart()
-    order_service.init_store()
+    # user_service.init_demo_user()
+    # book_service.init_books()
+    # cart_service.init_cart()
+    # order_service.init_store()
+
+    # --- Initialise DB schema and seed demo data / in-memory stores ---
+    with app.app_context():
+        db.create_all()
+        user_service.init_demo_user()
+        book_service.init_books()
+        cart_service.init_cart()
+        order_service.init_store()
 
     # --- Register blueprints (routes/controllers layer) ---
     from .routes.store import store_bp
