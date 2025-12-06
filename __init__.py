@@ -5,6 +5,7 @@ from .config import CONFIG_BY_NAME
 # Services
 from .services import user_service, book_service, cart_service, order_service
 
+csrf = CSRFProtect()
 
 def create_app(config_name: str | None = None) -> Flask:
     """
@@ -15,6 +16,8 @@ def create_app(config_name: str | None = None) -> Flask:
         app = create_app("production")       # explicit
     """
     app = Flask(__name__, instance_relative_config=False)
+    
+    csrf.init_app(app)
 
     # Decide which config to use
     env = config_name or os.environ.get("FLASK_ENV", "development")
