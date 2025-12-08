@@ -9,10 +9,10 @@ _USERS: Dict[str, User] = {}
 
 def init_demo_user() -> None:
     """Create a demo user using a hashed password."""
-    if "demo@bookstore.com" in _ USERS:
+    if "demo@bookstore.com" in _USERS:
         return
 
-    demo_password = os.environ.get("DEMO_USER_PASSWORD", "DemoPass123!")
+    demo_password = os.environ.get("DEMO_USER_PASSWORD", "demou123")
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(demo_password.encode("utf-8"), salt)
 
