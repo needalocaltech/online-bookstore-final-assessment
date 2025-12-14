@@ -5,7 +5,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 try:
-    from models import apply_discount
+    from models_not_quite_working import apply_discount
 except ImportError:
     def apply_discount(x, code): return x * 0.9  # fallback demo
 
