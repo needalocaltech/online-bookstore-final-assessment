@@ -1,14 +1,13 @@
 # tests/integration/conftest.py
 import os, sys, pathlib, importlib, re
 import pytest
-import flask
-# from flask import flask, render_template, request, redirect, url_for, flash, jsonify, session
+# import flask
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 
 
 
 # ROOT = pathlib.Path(__file__).resolve().parents[2]
-# ROOT = pathlib.Path(__file__).resolve().parents[2]
-ROOT = "../../../../"
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
