@@ -12,7 +12,11 @@ def init_demo_user() -> None:
     if "demo@bookstore.com" in _USERS:
         return
 
-    demo_password = os.environ.get("DEMO_USER_PASSWORD", "demou123")
+    demo_password = os.environ.get("DEMO_USER_PASSWORD", "DemoPass123!")
+    # demo_password = os.environ.get("DEMO_USER_PASSWORD", "demo123")
+        # Debug print to see the password being used
+    print(f"Initializing demo user with password: {demo_password}")
+
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(demo_password.encode("utf-8"), salt)
 
@@ -41,17 +45,38 @@ def register_user(email: str, raw_password: str, name: str, address: str = "") -
     user = User(email=email, password=hashed_password, name=name, address=address)
     _USERS[email] = user
     return user
+    
 
 
+
+# def authenticate(email: str, raw_password: str) -> Optional[User]:
+#     user = _USERS.get(email)
+#     if not user:
+#         return None
+
+#     # User.password here is the hashed password
+#     if not bcrypt.checkpw(raw_password.encode("utf-8"), user.password):
+#         return None
+#     return user
+
+# Example add debug lines to authenticate
 def authenticate(email: str, raw_password: str) -> Optional[User]:
     user = _USERS.get(email)
     if not user:
+        print(f"Authentication failed: User with email {email} does not exist.")
         return None
+
+    # Debug: Ensure the raw password has no trailing spaces
+    print(f"Authenticating user: {email} with provided password: {raw_password}")
 
     # User.password here is the hashed password
     if not bcrypt.checkpw(raw_password.encode("utf-8"), user.password):
+        print("Authentication failed: Incorrect password.")
         return None
+
+    print("Authentication successful.")
     return user
+
 
 
 def update_profile(user: User, name: str | None = None, address: str | None = None) -> None:

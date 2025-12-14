@@ -1,4 +1,4 @@
-rr<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -39,6 +39,7 @@ rr<!DOCTYPE html>
                 {% endwith %}
 
                 <form action="/login" method="post" class="auth-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <div class="form-group">
                         <label for="email">Email Address</label>
                         <input type="email" id="email" name="email" required>
@@ -51,9 +52,9 @@ rr<!DOCTYPE html>
                     
                     <button type="submit" class="btn btn-primary">Login</button>
                 </form>
-                <form action="/login" method="post" class="auth-form">
+                 <!-- <form action="/login" method="post" class="auth-form">
                     <input type="hidden" name="csrf_token" value="">
-                </form>
+                </form> -->
                 
                 <div class="auth-links">
                     <p>Don't have an account? <a href="/register">Register here</a></p>

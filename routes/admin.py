@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template, flash
-from bookstore.routes.auth import login_required
-from bookstore.services import user_service, book_service
+# from bookstore.routes.auth import login_required
+# from bookstore.services import user_service, book_service
+from routes.auth import login_required
+from services import user_service, book_service
 
 admin_bp = Blueprint("admin", __name__, template_folder="../../templates")
 

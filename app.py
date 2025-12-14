@@ -50,6 +50,8 @@ import bcrypt
 # Password to hash
 # password = b"my_secure_password"
 password = b"demo123"
+passwordmamba = "demo123"
+
 # Generate a salt
 salt = bcrypt.gensalt()
 
@@ -57,7 +59,7 @@ salt = bcrypt.gensalt()
 hashed_password = bcrypt.hashpw(password, salt)
 
 print("Hashed Password:", hashed_password)
-
+print("Password:", password)
 
 app = Flask(__name__)
 # app.secret_key = 'your_secret_key'  # Required for sessiontyement
@@ -69,8 +71,13 @@ users = {}  # email -> User object
 orders = {}  # order_id -> Order object
 
 # Create demo user for testing
-demo_user = User("demo@bookstore.com", hashed_password, "Demo User", "123 Demo Street, Demo City, DC 12345")
+# demo_user = User("demo@bookstore.com", hashed_password, "Demo User", "123 Demo Street, Demo City, DC 12345")
+# users["demo@bookstore.com"] = demo_user
+
+demo_user = User("demo@bookstore.com", passwordmamba, "Demo User", "123 Demo Street, Demo City, DC 12345")
 users["demo@bookstore.com"] = demo_user
+
+
 
 # Create a cart instance to manage the cart
 cart = Cart()

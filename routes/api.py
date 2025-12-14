@@ -1,5 +1,7 @@
 from flask import Blueprint, jsonify
-from bookstore.services import book_service
+# from bookstore.services import book_service
+
+from services import book_service
 
 api_bp = Blueprint("api", __name__)
 

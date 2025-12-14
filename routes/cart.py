@@ -1,3 +1,8 @@
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from services import user_service, cart_service, order_service
+
+cart_bp = Blueprint("cart", __name__)
+
 @cart_bp.route("/process-checkout", methods=["POST"])
 def process_checkout():
     if cart_service.is_empty():

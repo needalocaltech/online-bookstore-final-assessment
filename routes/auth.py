@@ -1,6 +1,6 @@
 from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from bookstore.services import user_service
+from services import user_service
 
 auth_bp = Blueprint("auth", __name__)
 
